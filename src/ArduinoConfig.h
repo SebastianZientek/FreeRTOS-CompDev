@@ -1,8 +1,11 @@
-#pragma once
+#ifndef _ARDUINOCONFIG_H_
+#define _ARDUINOCONFIG_H_
 
 #define PLATFORM_ARDUINO_NANO
+
 #define PIN_INPUT INPUT
 #define PIN_OUTPUT OUTPUT
 #define PIN_HIGH HIGH
 #define PIN_LOW LOW
 
+#endif // _ARDUINOCONFIG_H_

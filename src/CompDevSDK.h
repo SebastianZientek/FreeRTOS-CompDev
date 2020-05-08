@@ -1,9 +1,10 @@
-#pragma once
+#ifndef _COMPDEVSDK_H_
+#define _COMPDEVSDK_H_
 
 #include <Arduino.h>
 #include <Arduino_FreeRTOS.h>
 
-#include "CompDevSDKArduinoConfig.h"
+#include "ArduinoConfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,3 +16,5 @@ void CompDevSDKMain();
 #ifdef __cplusplus
 }
 #endif
+
+#endif // _COMPDEVSDK_H_
