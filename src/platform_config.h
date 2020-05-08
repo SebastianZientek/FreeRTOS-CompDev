@@ -7,5 +7,6 @@
 #define PIN_OUTPUT OUTPUT
 #define PIN_HIGH HIGH
 #define PIN_LOW LOW
+#define UART_BUFFER_SIZE 80
 
 #endif // _PLATFORM_CONFIG_H_
