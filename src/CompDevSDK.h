@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <Arduino_FreeRTOS.h>
 
-#include "ArduinoConfig.h"
+#include "platform_config.h"
 
 #ifdef __cplusplus
 extern "C" {
