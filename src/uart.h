@@ -9,7 +9,7 @@ extern "C" {
 
 void uartInit(uint32_t baud);
 void uartPrint(const char *str);
-void uartPrintf(const char *str, ...);
+void uartPrintf(const char *fmt, ...);
 
 #ifdef __cplusplus
 }
