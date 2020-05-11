@@ -12,7 +12,7 @@ void BlinkTask(void *param)
     {
         setPinValue(13, !getPinValue(13));
         displaySetPos(0, 0);
-        displayPrintf("Blinks: %u", blinksNum++);
+        displayPrintf("Blinks: %u\nTest", blinksNum++);
         vTaskDelay(1000/portTICK_PERIOD_MS);
     }
 }

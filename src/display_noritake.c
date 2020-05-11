@@ -21,46 +21,37 @@
 #include "delay.h"
 #include "display.h"
 
-static void write(uint8_t data, uint8_t rs)
+static void write(uint8_t data, uint8_t registerSelect)
 {
-    uint8_t value = 0xf8 + 2 * rs;
-
-    setPinValue(NORITAKE_STB, 0);
-    for (uint8_t i = 0x80; i; i >>= 1)
-    {
-        setPinValue(NORITAKE_SCK, 0);
-        if (value & i)
-            setPinValue(NORITAKE_SIO, 1);
-        else
-            setPinValue(NORITAKE_SIO, 0);
-        setPinValue(NORITAKE_SCK, 1);
-    }
-
-    value = data;
-    for (uint8_t i = 0x80; i; i >>= 1)
-    {
-        setPinValue(NORITAKE_SCK, 0);
-        if (value & i)
-            setPinValue(NORITAKE_SIO, 1);
-        else
-            setPinValue(NORITAKE_SIO, 0);
-        setPinValue(NORITAKE_SCK, 1);
-    }
-    setPinValue(NORITAKE_STB, 1);
-}
-
-static uint8_t read(uint8_t rs)
-{
-    uint8_t data = 0xfc + 2 * rs;
+    uint8_t value = 0xf8 + 2 * registerSelect;
 
     setPinValue(NORITAKE_STB, PIN_LOW);
     for (uint8_t i = 0x80; i; i >>= 1)
     {
         setPinValue(NORITAKE_SCK, PIN_LOW);
-        if (data & i)
-            setPinValue(NORITAKE_SIO, PIN_HIGH);
-        else
-            setPinValue(NORITAKE_SIO, PIN_LOW);
+        setPinValue(NORITAKE_SIO, value & i);
+        setPinValue(NORITAKE_SCK, PIN_HIGH);
+    }
+
+    value = data;
+    for (uint8_t i = 0x80; i; i >>= 1)
+    {
+        setPinValue(NORITAKE_SCK, PIN_LOW);
+        setPinValue(NORITAKE_SIO, value & i);
+        setPinValue(NORITAKE_SCK, PIN_HIGH);
+    }
+    setPinValue(NORITAKE_STB, PIN_HIGH);
+}
+
+static uint8_t read(uint8_t registerSelect)
+{
+    uint8_t data = 0xfc + 2 * registerSelect;
+
+    setPinValue(NORITAKE_STB, PIN_LOW);
+    for (uint8_t i = 0x80; i; i >>= 1)
+    {
+        setPinValue(NORITAKE_SCK, PIN_LOW);
+        setPinValue(NORITAKE_SIO, data & i);
         setPinValue(NORITAKE_SCK, PIN_HIGH);
     }
 
@@ -85,7 +76,7 @@ static uint8_t read(uint8_t rs)
 
 static void cmd(uint8_t data)
 {
-    delay(54);
+    delayUs(54);
     write(data, 0);
 }
 
@@ -105,15 +96,15 @@ static void newLine()
 {
 	uint8_t addr = readAddress();
 
-    if (addr < 0x14)
-        addr = 0x40;
-    else if (0x40 <= addr && addr < 0x54)
-        addr = 0x14;
-    else if (0x14 <= addr && addr <= 0x28)
-        addr = 0x54;
+    if (addr < DISPLAY_LINE1_ADDR + 20)
+        addr = DISPLAY_LINE2_ADDR;
+    else if (addr <= DISPLAY_LINE3_ADDR + 20)
+        addr = DISPLAY_LINE4_ADDR;
+    else if (addr < DISPLAY_LINE2_ADDR + 20)
+        addr = DISPLAY_LINE3_ADDR;
     else
-        addr = 0x00;
-    cmd(0x80 | addr);
+        addr = DISPLAY_LINE1_ADDR;
+    cmd(DISPLAY_DDRAM | addr);
 
 	delayUs(5);
 }
@@ -131,33 +122,29 @@ void displayInit()
     delayUs(11000);
 
     // Send 3 times command for 8-bit mode
-    write(0x30, 0);
+    write(DISPLAY_FUNCTION_SET, 0);
     delayUs(10000);
 
-    write(0x30, 0);
+    write(DISPLAY_FUNCTION_SET, 0);
     delayUs(110);
 
-    write(0x30, 0);
+    write(DISPLAY_FUNCTION_SET, 0);
     delayUs(110);
 
     // Function set command (for two lines display)
-    write(0x38, 0);
+    write(DISPLAY_SET_COMMAND, 0);
     delayUs(60);
 
-    // Display On
-    cmd(0x08);
+    cmd(DISPLAY_OFF);
     delayUs(60);
 
-    // Clear display
-    cmd(0x01);
+    cmd(DISPLAY_CLEAR);
     delayUs(4000);
 
-    // Entry mode set
-    cmd(0x06);
+    cmd(DISPLAY_MODE_SET);
     delayUs(60);
 
-    // Set properties (cursor on and blinking)
-    cmd(0x0F);
+    cmd(DISPLAY_SETTINGS | DISPLAY_ON | DISPLAY_CURSOR_ON | DISPLAY_CURSOR_BLINK);
     delayUs(60);
 }
 
@@ -166,16 +153,16 @@ void displaySetPos(uint8_t x, uint8_t y)
     switch (y)
     {
     case 0:
-        cmd(0x80 | 0x00 + x);
+        cmd(DISPLAY_DDRAM | DISPLAY_LINE1_ADDR + x);
         break;
     case 1:
-        cmd(0x80 | 0x40 + x);
+        cmd(DISPLAY_DDRAM | DISPLAY_LINE2_ADDR + x);
         break;
     case 2:
-        cmd(0x80 | 0x14 + x);
+        cmd(DISPLAY_DDRAM | DISPLAY_LINE3_ADDR + x);
         break;
     case 3:
-        cmd(0x80 | 0x54 + x);
+        cmd(DISPLAY_DDRAM | DISPLAY_LINE4_ADDR + x);
         break;
     }
     delayUs(500);
