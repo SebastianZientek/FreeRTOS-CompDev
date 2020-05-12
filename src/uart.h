@@ -7,9 +7,27 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Inits uart port
+ *
+ * @param baud      baud rate for communication
+ */
 void uartInit(uint32_t baud);
+
+/**
+ * @brief Prints cstring to the uart
+ *
+ * @param str       string to print
+ */
 void uartPrint(const char *str);
-void uartPrintf(const char *str, ...);
+
+/**
+ * @brief Formatted printing to uart
+ *
+ * @param fmt       formatting string
+ * @param ...       values to uart
+ */
+void uartPrintf(const char *fmt, ...);
 
 #ifdef __cplusplus
 }

@@ -5,9 +5,9 @@
 #include <Arduino.h>
 #include "ports.h"
 
-void setPinMode(const uint8_t pin, const uint8_t value)
+void setPinMode(const uint8_t pin, const uint8_t mode)
 {
-    pinMode(pin, value);
+    pinMode(pin, mode);
 }
 
 void setPinValue(const uint8_t pin, const uint8_t value)
