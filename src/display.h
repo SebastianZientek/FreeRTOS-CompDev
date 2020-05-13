@@ -7,8 +7,10 @@
 #define DISPLAY_LINE3_ADDR 0x14
 #define DISPLAY_LINE4_ADDR 0x54
 
-#define DISPLAY_SET_COMMAND 0x38
+#define DISPLAY_SET_COMMAND_FOR_8_BIT_MODE 0x38
+#define DISPLAY_SET_COMMAND_FOR_4_BIT_MODE 0x28
 #define DISPLAY_FUNCTION_SET 0x30
+#define DISPLAY_ENTER_4_BIT_MODE 0x2
 #define DISPLAY_MODE_SET 0x06
 #define DISPLAY_SETTINGS 0x08
 
@@ -19,6 +21,10 @@
 #define DISPLAY_CURSOR_BLINK 0x01
 
 #include <inttypes.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Initialization of display
@@ -48,5 +54,9 @@ void displayPrint(const char *str);
  * @param ...       values to display
  */
 void displayPrintf(const char *fmt, ...);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _DISPLAY_H_
