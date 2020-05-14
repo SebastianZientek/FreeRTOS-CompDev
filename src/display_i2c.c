@@ -6,104 +6,6 @@
 #include "delay.h"
 #include "display.h"
 
-#define DISPLAY_BUFFER_SIZE 40
-
-#ifdef DISPLAY_NORITAKE
-
-#ifndef NORITAKE_SIO
-#warning NORITAKE_SIO not defined, pin 10 will be used
-#define NORITAKE_SIO 10
-#endif
-#ifndef NORITAKE_STB
-#warning NORITAKE_STB not defined, pin 11 will be used
-#define NORITAKE_STB 11
-#endif
-#ifndef NORITAKE_SCK
-#warning NORITAKE_SCK not defined, pin 12 will be used
-#define NORITAKE_SCK 12
-#endif
-
-static void write(uint8_t data, uint8_t registerSelect)
-{
-    uint8_t value = 0xf8 + 2 * registerSelect;
-
-    setPinValue(NORITAKE_STB, PIN_LOW);
-    for (uint8_t i = 0x80; i; i >>= 1)
-    {
-        setPinValue(NORITAKE_SCK, PIN_LOW);
-        setPinValue(NORITAKE_SIO, value & i);
-        setPinValue(NORITAKE_SCK, PIN_HIGH);
-    }
-
-    value = data;
-    for (uint8_t i = 0x80; i; i >>= 1)
-    {
-        setPinValue(NORITAKE_SCK, PIN_LOW);
-        setPinValue(NORITAKE_SIO, value & i);
-        setPinValue(NORITAKE_SCK, PIN_HIGH);
-    }
-    setPinValue(NORITAKE_STB, PIN_HIGH);
-}
-
-static uint8_t read(uint8_t registerSelect)
-{
-    uint8_t data = 0xfc + 2 * registerSelect;
-
-    setPinValue(NORITAKE_STB, PIN_LOW);
-    for (uint8_t i = 0x80; i; i >>= 1)
-    {
-        setPinValue(NORITAKE_SCK, PIN_LOW);
-        setPinValue(NORITAKE_SIO, data & i);
-        setPinValue(NORITAKE_SCK, PIN_HIGH);
-    }
-
-    setPinMode(NORITAKE_SIO, PIN_INPUT);
-    delayUs(1);
-
-    for (uint8_t i = 0; i < 8; ++i)
-    {
-        setPinValue(NORITAKE_SCK, PIN_LOW);
-        delayUs(1);
-        setPinValue(NORITAKE_SCK, PIN_HIGH);
-
-        data <<= 1;
-        if (getPinValue(NORITAKE_SIO))
-            data |= 1;
-    }
-
-    setPinValue(NORITAKE_STB, PIN_HIGH);
-    setPinMode(NORITAKE_SIO, PIN_OUTPUT);
-    return data;
-}
-
-static void setupDisplay()
-{
-    setPinMode(NORITAKE_SIO, PIN_OUTPUT);
-    setPinMode(NORITAKE_STB, PIN_OUTPUT);
-    setPinMode(NORITAKE_SCK, PIN_OUTPUT);
-
-    setPinValue(NORITAKE_SIO, PIN_HIGH);
-    setPinValue(NORITAKE_STB, PIN_HIGH);
-    setPinValue(NORITAKE_SCK, PIN_HIGH);
-
-    delayUs(11000);
-
-    // Send 3 times command for 8-bit mode
-    write(DISPLAY_FUNCTION_SET, 0);
-    delayUs(10000);
-
-    write(DISPLAY_FUNCTION_SET, 0);
-    delayUs(110);
-
-    write(DISPLAY_FUNCTION_SET, 0);
-    delayUs(110);
-
-    write(DISPLAY_SET_COMMAND_FOR_8_BIT_MODE, 0);
-    delayUs(60);
-}
-
-#endif
-
 #ifdef DISPLAY_I2C
 
 #include "i2c.h"
@@ -130,11 +32,11 @@ static void setDataBit(uint8_t bit, uint8_t value)
 static void triggerEnable()
 {
     setDataBit(LCD_E, 1);
-    i2cSend(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
     delayUs(2);
 
     setDataBit(LCD_E, 0);
-    i2cSend(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
     delayUs(2);
 }
 
@@ -148,7 +50,7 @@ static void write4bit(uint8_t data, uint8_t registerSelect)
         setDataBit(LCD_D3 - i, data & (0x08 >> i));
     }
 
-    i2cSend(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
     triggerEnable();
 }
 
@@ -166,14 +68,14 @@ static uint8_t read(uint8_t registerSelect)
     uint8_t ret = 0x00;
     setDataBit(LCD_RS, registerSelect);
     setDataBit(LCD_RW, 1);
-    i2cSend(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
 
     // Read high part of data
     setDataBit(LCD_E, 1);
-    i2cSend(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
     delayUs(10);
 
-    uint8_t data = ~i2cRead(DISPLAY_I2C_ADDR);
+    uint8_t data = ~i2cReadOneByte(DISPLAY_I2C_ADDR);
 
     for (uint8_t i = 4; i; --i)
     {
@@ -182,15 +84,15 @@ static uint8_t read(uint8_t registerSelect)
     }
 
     setDataBit(LCD_E, 0);
-    i2cSend(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
     delayUs(10);
 
     // Read low part of data
     setDataBit(LCD_E, 1);
-    i2cSend(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
     delayUs(10);
 
-    data = ~i2cRead(DISPLAY_I2C_ADDR);
+    data = ~i2cReadOneByte(DISPLAY_I2C_ADDR);
 
     for (uint8_t i = 4; i; --i)
     {
@@ -199,7 +101,7 @@ static uint8_t read(uint8_t registerSelect)
     }
 
     setDataBit(LCD_E, 0);
-    i2cSend(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
     delayUs(10);
 
     return ret;
@@ -211,7 +113,7 @@ static void setupDisplay()
 
     // Backlight on
     setDataBit(LCD_LED, 1);
-    i2cSend(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
 
     // Send 3 times command for initialization in 8-bit mode (initial state).
     // We are sending only high part of data, rest is ignored.
@@ -230,8 +132,6 @@ static void setupDisplay()
 
     write(DISPLAY_SET_COMMAND_FOR_4_BIT_MODE, 0);
 }
-
-#endif
 
 static void cmd(uint8_t data)
 {
@@ -328,3 +228,5 @@ void displayPrintf(const char *fmt, ...)
 
     displayPrint(buffer);
 }
+
+#endif

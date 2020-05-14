@@ -20,6 +20,8 @@
 #define DISPLAY_CURSOR_ON 0x02
 #define DISPLAY_CURSOR_BLINK 0x01
 
+#define DISPLAY_BUFFER_SIZE 40
+
 #include <inttypes.h>
 
 #ifdef __cplusplus
