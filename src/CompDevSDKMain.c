@@ -2,6 +2,7 @@
 #include "ports.h"
 #include "uart.h"
 #include "display.h"
+#include "i2c.h"
 
 TaskHandle_t BlinkTaskHandle;
 TaskHandle_t DisplayInitTaskHandle;
@@ -30,6 +31,7 @@ void systemInit()
 {
     uartInit(9600);
     setPinMode(13, PIN_OUTPUT);
+    i2cInit();
     xTaskCreate(displayInitTask, "DisplayInitTask", 100, NULL, 1, &DisplayInitTaskHandle);
 
     uartPrint("System initialized\n");

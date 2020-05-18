@@ -110,8 +110,6 @@ static uint8_t read(uint8_t registerSelect)
 
 static void setupDisplay()
 {
-    i2cInit();
-
     // Backlight on
     setDataBit(LCD_LED, 1);
     i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
