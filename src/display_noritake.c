@@ -1,5 +1,11 @@
 #include "CompDevSDK.h"
 
+#include <stdarg.h>
+#include <stdio.h>
+#include "ports.h"
+#include "delay.h"
+#include "display.h"
+
 #ifdef DISPLAY_NORITAKE
 
 #ifndef NORITAKE_SIO
@@ -15,11 +21,7 @@
 #define NORITAKE_SCK 12
 #endif
 
-#include <stdarg.h>
-#include <stdio.h>
-#include "ports.h"
-#include "delay.h"
-#include "display.h"
+static uint8_t displayInitialized = 0;
 
 static void write(uint8_t data, uint8_t registerSelect)
 {
@@ -74,6 +76,32 @@ static uint8_t read(uint8_t registerSelect)
     return data;
 }
 
+static void setupDisplay()
+{
+    setPinMode(NORITAKE_SIO, PIN_OUTPUT);
+    setPinMode(NORITAKE_STB, PIN_OUTPUT);
+    setPinMode(NORITAKE_SCK, PIN_OUTPUT);
+
+    setPinValue(NORITAKE_SIO, PIN_HIGH);
+    setPinValue(NORITAKE_STB, PIN_HIGH);
+    setPinValue(NORITAKE_SCK, PIN_HIGH);
+
+    delayUs(11000);
+
+    // Send 3 times command for 8-bit mode
+    write(DISPLAY_FUNCTION_SET, 0);
+    delayUs(10000);
+
+    write(DISPLAY_FUNCTION_SET, 0);
+    delayUs(110);
+
+    write(DISPLAY_FUNCTION_SET, 0);
+    delayUs(110);
+
+    write(DISPLAY_SET_COMMAND_FOR_8_BIT_MODE, 0);
+    delayUs(60);
+}
+
 static void cmd(uint8_t data)
 {
     delayUs(54);
@@ -111,29 +139,7 @@ static void newLine()
 
 void displayInit()
 {
-    setPinMode(NORITAKE_SIO, PIN_OUTPUT);
-    setPinMode(NORITAKE_STB, PIN_OUTPUT);
-    setPinMode(NORITAKE_SCK, PIN_OUTPUT);
-
-    setPinValue(NORITAKE_SIO, PIN_HIGH);
-    setPinValue(NORITAKE_STB, PIN_HIGH);
-    setPinValue(NORITAKE_SCK, PIN_HIGH);
-
-    delayUs(11000);
-
-    // Send 3 times command for 8-bit mode
-    write(DISPLAY_FUNCTION_SET, 0);
-    delayUs(10000);
-
-    write(DISPLAY_FUNCTION_SET, 0);
-    delayUs(110);
-
-    write(DISPLAY_FUNCTION_SET, 0);
-    delayUs(110);
-
-    // Function set command (for two lines display)
-    write(DISPLAY_SET_COMMAND, 0);
-    delayUs(60);
+    setupDisplay();
 
     cmd(DISPLAY_OFF);
     delayUs(60);
@@ -146,10 +152,17 @@ void displayInit()
 
     cmd(DISPLAY_SETTINGS | DISPLAY_ON | DISPLAY_CURSOR_ON | DISPLAY_CURSOR_BLINK);
     delayUs(60);
+
+    displayInitialized = 1;
 }
 
 void displaySetPos(uint8_t x, uint8_t y)
 {
+    while (!displayInitialized)
+    {
+        taskYIELD();
+    }
+
     switch (y)
     {
     case 0:
@@ -170,6 +183,11 @@ void displaySetPos(uint8_t x, uint8_t y)
 
 void displayPrint(const char *str)
 {
+    while (!displayInitialized)
+    {
+        taskYIELD();
+    }
+
     while (*str)
     {
         if (*str == '\n')
@@ -182,6 +200,11 @@ void displayPrint(const char *str)
 
 void displayPrintf(const char *fmt, ...)
 {
+    while (!displayInitialized)
+    {
+        taskYIELD();
+    }
+
     char buffer[DISPLAY_BUFFER_SIZE];
     va_list args;
 

@@ -9,10 +9,12 @@
 #define PIN_LOW LOW
 #define UART_BUFFER_SIZE 80
 
-#define DISPLAY_BUFFER_SIZE 80
-#define DISPLAY_NORITAKE
-#define NORITAKE_SIO 10
-#define NORITAKE_STB 11
-#define NORITAKE_SCK 12
+#define DISPLAY_I2C
+#define DISPLAY_I2C_ADDR 0x26
+
+// #define DISPLAY_NORITAKE
+// #define NORITAKE_SIO 10
+// #define NORITAKE_STB 11
+// #define NORITAKE_SCK 12
 
 #endif // _PLATFORM_CONFIG_H_

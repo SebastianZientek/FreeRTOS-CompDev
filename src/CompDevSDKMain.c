@@ -2,9 +2,12 @@
 #include "ports.h"
 #include "uart.h"
 #include "display.h"
+#include "i2c.h"
 
 TaskHandle_t BlinkTaskHandle;
-void BlinkTask(void *param)
+TaskHandle_t DisplayInitTaskHandle;
+
+void blinkTask(void *param)
 {
     (void)param;
     static uint32_t blinksNum = 0;
@@ -17,11 +20,19 @@ void BlinkTask(void *param)
     }
 }
 
+void displayInitTask(void *param)
+{
+    (void)param;
+    displayInit();
+    vTaskDelete(NULL);
+}
+
 void systemInit()
 {
     uartInit(9600);
-    displayInit();
     setPinMode(13, PIN_OUTPUT);
+    i2cInit();
+    xTaskCreate(displayInitTask, "DisplayInitTask", 100, NULL, 1, &DisplayInitTaskHandle);
 
     uartPrint("System initialized\n");
 }
@@ -29,5 +40,6 @@ void systemInit()
 void CompDevSDKMain()
 {
     systemInit();
-    xTaskCreate(BlinkTask, "BlinkTask", 200, NULL, 1, &BlinkTaskHandle);
+
+    xTaskCreate(blinkTask, "BlinkTask", 200, NULL, 1, &BlinkTaskHandle);
 }
