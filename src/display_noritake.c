@@ -21,6 +21,8 @@
 #define NORITAKE_SCK 12
 #endif
 
+static uint8_t displayInitialized = 0;
+
 static void write(uint8_t data, uint8_t registerSelect)
 {
     uint8_t value = 0xf8 + 2 * registerSelect;
@@ -150,10 +152,17 @@ void displayInit()
 
     cmd(DISPLAY_SETTINGS | DISPLAY_ON | DISPLAY_CURSOR_ON | DISPLAY_CURSOR_BLINK);
     delayUs(60);
+
+    displayInitialized = 1;
 }
 
 void displaySetPos(uint8_t x, uint8_t y)
 {
+    while (!displayInitialized)
+    {
+        taskYIELD();
+    }
+
     switch (y)
     {
     case 0:
@@ -174,6 +183,11 @@ void displaySetPos(uint8_t x, uint8_t y)
 
 void displayPrint(const char *str)
 {
+    while (!displayInitialized)
+    {
+        taskYIELD();
+    }
+
     while (*str)
     {
         if (*str == '\n')
@@ -186,6 +200,11 @@ void displayPrint(const char *str)
 
 void displayPrintf(const char *fmt, ...)
 {
+    while (!displayInitialized)
+    {
+        taskYIELD();
+    }
+
     char buffer[DISPLAY_BUFFER_SIZE];
     va_list args;
 

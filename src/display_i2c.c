@@ -20,6 +20,7 @@
 #define LCD_LED 3
 
 static uint8_t displayCurrentData = 0x00;
+static uint8_t displayInitialized = 0;
 
 static void setDataBit(uint8_t bit, uint8_t value)
 {
@@ -183,10 +184,17 @@ void displayInit()
 
     cmd(DISPLAY_SETTINGS | DISPLAY_ON | DISPLAY_CURSOR_ON | DISPLAY_CURSOR_BLINK);
     delayUs(60);
+
+    displayInitialized = 1;
 }
 
 void displaySetPos(uint8_t x, uint8_t y)
 {
+    while (!displayInitialized)
+    {
+        taskYIELD();
+    }
+
     switch (y)
     {
     case 0:
@@ -207,6 +215,11 @@ void displaySetPos(uint8_t x, uint8_t y)
 
 void displayPrint(const char *str)
 {
+    while (!displayInitialized)
+    {
+        taskYIELD();
+    }
+
     while (*str)
     {
         if (*str == '\n')
@@ -219,6 +232,11 @@ void displayPrint(const char *str)
 
 void displayPrintf(const char *fmt, ...)
 {
+    while (!displayInitialized)
+    {
+        taskYIELD();
+    }
+
     char buffer[DISPLAY_BUFFER_SIZE];
     va_list args;
 
