@@ -8,8 +8,8 @@ extern "C" {
 #endif
 
 typedef enum{
-    SPI_ORDER_LSBMSB,
-    SPI_ORDER_MSBLSB
+    SPI_ORDER_LSB_FIRST,
+    SPI_ORDER_MSB_FIRST
 } SpiBitOrder_t;
 
 typedef enum {
@@ -29,11 +29,18 @@ typedef enum {
     SPI_DATA_MODE_3 = 0x0C  // CPOL = 1, CPHA = 1
 } SpiDataMode_t;
 
+typedef struct{
+    SpiBitOrder_t bitOrder;
+    SpiClkDiv_t clkDivider;
+    SpiDataMode_t dataMode;
+} SPIConfig;
+
 /**
  * @brief Initialize the SPI
  *
+ * @param spiConfig     configuration of the SPI
  */
-void SPIInit();
+void SPIInit(SPIConfig spiConfig);
 
 /**
  * @brief Disable SPI
@@ -48,27 +55,6 @@ void SPIDisable();
  * @return uint8_t  received data
  */
 uint8_t SPITransfer(uint8_t data);
-
-/**
- * @brief Sets SPI data mode
- *
- * @param mode      data sending mode
- */
-void SPISetDataMode(SpiDataMode_t mode);
-
-/**
- * @brief Sets bit order for data transmission
- *
- * @param order     bit order (SPI_ORDER_LSBMSB or SPI_ORDER_MSBLSB)
- */
-void SPISetBitOrder(SpiBitOrder_t order);
-
-/**
- * @brief Sets clock divider for SPI clock
- *
- * @param divider     divider for the clock
- */
-void SPISetClockDivider(SpiClkDiv_t divider);
 
 #ifdef __cplusplus
 }

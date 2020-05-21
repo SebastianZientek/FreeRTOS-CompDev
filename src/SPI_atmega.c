@@ -12,42 +12,25 @@
 
 static uint8_t busyFlag = 0;
 
-void SPIInit()
-{
-    setPinMode(SPI_MOSI_PIN, PIN_OUTPUT);
-    setPinMode(SPI_SCK_PIN, PIN_OUTPUT);
-    setPinMode(SPI_MISO_PIN, PIN_INPUT);
-    setPinMode(SPI_SS_PIN, PIN_OUTPUT);
-
-    setPinValue(SPI_SS_PIN, PIN_HIGH);
-
-    SPCR |= (1 << MSTR) | (1 << SPE);
-}
-
-void SPIDisable()
-{
-    SPCR = ~(1 << SPE);
-}
-
-void SPISetDataMode(SpiDataMode_t mode)
+static void setDataMode(SpiDataMode_t mode)
 {
     SPCR = (SPCR & ~SPI_MODE_MASK) | mode;
 }
 
-void SPISetBitOrder(SpiBitOrder_t order)
+static void setBitOrder(SpiBitOrder_t order)
 {
     switch (order)
     {
-    case SPI_ORDER_LSBMSB:
+    case SPI_ORDER_LSB_FIRST:
         SPCR |= (1 << DORD);
     break;
-    case SPI_ORDER_MSBLSB:
+    case SPI_ORDER_MSB_FIRST:
         SPCR &= ~(1 << DORD);
     break;
     }
 }
 
-void SPISetClockDivider(SpiClkDiv_t divider)
+static void setClockDivider(SpiClkDiv_t divider)
 {
     uint8_t spr1 = 0;
     uint8_t spr0 = 0;
@@ -95,6 +78,27 @@ void SPISetClockDivider(SpiClkDiv_t divider)
         SPSR |= (1 << SPI2X);
     else
         SPSR &= ~(1 << SPI2X);
+}
+
+void SPIInit(SPIConfig spiConfig)
+{
+    setPinMode(SPI_MOSI_PIN, PIN_OUTPUT);
+    setPinMode(SPI_SCK_PIN, PIN_OUTPUT);
+    setPinMode(SPI_MISO_PIN, PIN_INPUT);
+    setPinMode(SPI_SS_PIN, PIN_OUTPUT);
+
+    setPinValue(SPI_SS_PIN, PIN_HIGH);
+
+    SPCR |= (1 << MSTR) | (1 << SPE);
+
+    setDataMode(spiConfig.dataMode);
+    setBitOrder(spiConfig.bitOrder);
+    setClockDivider(spiConfig.clkDivider);
+}
+
+void SPIDisable()
+{
+    SPCR = ~(1 << SPE);
 }
 
 uint8_t SPITransfer(uint8_t data)
