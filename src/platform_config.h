@@ -17,6 +17,9 @@
 #define DISPLAY_I2C
 #define DISPLAY_I2C_ADDR 0x26
 
+#define NRF24_CSN_PIN 8
+#define NRF24_CE_PIN 7
+
 // #define DISPLAY_NORITAKE
 // #define NORITAKE_SIO 4
 // #define NORITAKE_STB 5
