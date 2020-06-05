@@ -5,7 +5,7 @@
 #include "SPI.h"
 #include "delay.h"
 
-TaskHandle_t NRFInterruptTaskHandle;
+TaskHandle_t NrfEventTaskHandle;
 
 static uint8_t sendCmd(uint8_t cmd, void *data, size_t length)
 {
@@ -52,7 +52,10 @@ static int8_t isTransmissionSuccess()
     setPinValue(NRF24_CE_PIN, PIN_LOW);
     uint8_t status = sendCmd(NOP, NULL, 0);
 
-    int success;
+    //  0 - Transsmision success
+    // -1 - Transsmision failure, maximum number of TX retransmits exceed
+    // -2 - Transsmision failure (i.e. when auto retransmission is not enabled)
+    int8_t success = -2;
     if (status & (1 << MASK_TX_DS))
     {
         success = 0;
@@ -60,10 +63,6 @@ static int8_t isTransmissionSuccess()
     else if (status & (1 << MASK_MAX_RT))
     {
         success = -1;
-    }
-    else
-    {
-        success = -2;
     }
 
     return success;
@@ -74,7 +73,7 @@ static uint8_t getNrfStatus()
     return sendCmd(NOP, NULL, 0);
 }
 
-static void nrfInterruptTask(void *param)
+static void nrfEventTask(void *param)
 {
     (void)param;
     while (1)
@@ -99,7 +98,7 @@ static void nrfInterruptTask(void *param)
 }
 
 ISR(INT0_vect) {
-    BaseType_t xYieldRequired = xTaskResumeFromISR(NRFInterruptTaskHandle);
+    BaseType_t xYieldRequired = xTaskResumeFromISR(NrfEventTaskHandle);
     if (xYieldRequired == pdTRUE)
     {
         portYIELD_FROM_ISR();
@@ -114,7 +113,7 @@ void nrf24Init()
     setPinValue(NRF24_CSN_PIN, PIN_HIGH);
     setPinValue(NRF24_CE_PIN, PIN_LOW);
 
-    xTaskCreate(nrfInterruptTask, "NrfInterruptTask", 150, NULL, 1, &NRFInterruptTaskHandle);
+    xTaskCreate(nrfEventTask, "nrfEventTask", 150, NULL, 1, &NrfEventTaskHandle);
 
     // Power up and config
     uint8_t cmdData = (1 << PWR_UP) | (1 << CRCO) | (1 << EN_CRC) | (1 << PRIM_RX);

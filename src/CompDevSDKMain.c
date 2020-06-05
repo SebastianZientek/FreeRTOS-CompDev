@@ -6,19 +6,36 @@
 #include "NRF24L01.h"
 #include "SPI.h"
 
+#define RECEIVER
 
 TaskHandle_t BlinkTaskHandle;
 TaskHandle_t RadioTaskHandle;
 TaskHandle_t SystemInitTaskHandle;
 
-#define RECEIVER
-
-void radioTask(void *param)
+void transmitterTask(void *param)
 {
     (void)param;
-
     char *address = "abcde";
-#ifdef RECEIVER
+
+    nrf24SetForTransmission(address);
+
+    uint8_t on = 0;
+    while (1)
+    {
+        on = !on;
+
+        if (on)
+            nrf24SendData("ON", strlen("ON") + 1, 0);
+        else
+            nrf24SendData("OFF", strlen("OFF") + 1, 0);
+        vTaskDelay(1000/portTICK_PERIOD_MS);
+    }
+}
+
+void receiverTask(void *param)
+{
+    (void)param;
+    char *address = "abcde";
 
     nrf24Listen(0, address);
 
@@ -34,21 +51,6 @@ void radioTask(void *param)
 
         vTaskDelay(120/portTICK_PERIOD_MS);
     }
-#else
-    nrf24SetForTransmission(address);
-
-    uint8_t on = 0;
-    while (1)
-    {
-        on = !on;
-
-        if (on)
-            nrf24SendData("ON", strlen("ON") + 1, 0);
-        else
-            nrf24SendData("OFF", strlen("OFF") + 1, 0);
-        vTaskDelay(1000/portTICK_PERIOD_MS);
-    }
-#endif
 }
 
 void blinkTask(void *param)
@@ -83,10 +85,16 @@ void systemInitTask(void *param)
     nrf24SetChannel(20);
     nrf24SetPowerLevel(NRF24_PWR_MIN);
 
-    uartPrint("System initialized\nStartng tasks");
+    uartPrint("System initialized\r\nStarting tasks\r\n");
 
     xTaskCreate(blinkTask, "BlinkTask", 140, NULL, 1, &BlinkTaskHandle);
-    xTaskCreate(radioTask, "RadioTask", 200, NULL, 1, &RadioTaskHandle);
+
+    #ifdef TRANSMITTER
+        xTaskCreate(transmitterTask, "TransmitterRadioTask", 200, NULL, 1, &RadioTaskHandle);
+    #else if RECEIVER
+        xTaskCreate(receiverTask, "ReceiverRadioTask", 200, NULL, 1, &RadioTaskHandle);
+    #endif
+
     vTaskDelete(NULL);
 }
 
