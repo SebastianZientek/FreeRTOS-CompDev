@@ -91,7 +91,8 @@ void systemInitTask(void *param)
 
     #ifdef TRANSMITTER
         xTaskCreate(transmitterTask, "TransmitterRadioTask", 200, NULL, 1, &RadioTaskHandle);
-    #else if RECEIVER
+    #endif
+    #ifdef RECEIVER
         xTaskCreate(receiverTask, "ReceiverRadioTask", 200, NULL, 1, &RadioTaskHandle);
     #endif
 
