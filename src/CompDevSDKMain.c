@@ -19,7 +19,7 @@ void transmitterTask(void *param)
 
     nrf24SetForTransmission(address);
 
-    uint8_t on = 0;
+    bool on = 0;
     while (1)
     {
         on = !on;
