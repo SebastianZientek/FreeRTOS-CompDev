@@ -16,50 +16,26 @@ typedef struct
 {
     volatile uint8_t busy;
     volatile uint8_t numBytesToTransmit;
-    volatile uint8_t start;
-    volatile uint8_t end;
-    volatile uint8_t buffer[UART_BUFFER_SIZE];
+    volatile const char *bufferPtr;
 } OutputBuffer_t;
 
 static OutputBuffer_t outputBuffer = {
     .busy = 0,
     .numBytesToTransmit = 0,
-    .start = 0,
-    .end = 0,
+    .bufferPtr = NULL
 };
-
-static uint8_t isOutBufferFull()
-{
-    return (outputBuffer.end + 1) % UART_BUFFER_SIZE == outputBuffer.start;
-}
-
-static uint8_t isEmpty()
-{
-    return outputBuffer.end == outputBuffer.start;
-}
-
-static void putCharInOutBuffer(char c)
-{
-    outputBuffer.end = (outputBuffer.end + 1) % UART_BUFFER_SIZE;
-    outputBuffer.buffer[outputBuffer.end] = c;
-}
-
-static char getFromOutBuffer()
-{
-    char c = outputBuffer.buffer[outputBuffer.start];
-    outputBuffer.start = (outputBuffer.start + 1) % UART_BUFFER_SIZE;
-    return c;
-}
 
 static void sendFromOutBuffer()
 {
     if (outputBuffer.numBytesToTransmit > 0)
     {
-        if (!isEmpty()) UDR0 = getFromOutBuffer();
+        USART_DATA_REGISTER = *outputBuffer.bufferPtr++;
+        outputBuffer.numBytesToTransmit--;
     }
     else
     {
-        UCSR0B &= ~(1 << UDRE0);
+        // CLear flag, there is nothing to send
+        CONFIG_REGISER_B &= ~(1 << DATA_REGISTER_FLAG);
         outputBuffer.busy = 0;
     }
 }
@@ -74,10 +50,13 @@ void uartInit(uint32_t baud)
 {
     uint8_t baudPrescale = (F_CPU - (baud * 8L)) / (baud * 16UL);
 
-    UBRR0H  = (baudPrescale >> 8);
-    UBRR0L  = baudPrescale;
-    UCSR0B |= (1<<TXEN0);
-    UCSR0C |= (1<<UCSZ00) | (1<<UCSZ01);
+    BAUD_RATE_H  = (baudPrescale >> 8);
+    BAUD_RATE_L  = baudPrescale;
+
+    CONFIG_REGISER_B |= (1 << TRANSMITTER_ENABLE);
+
+    // Set character size (8 bits per character)
+    CONFIG_REGISER_C |= (1 << UART_CHAR_SIZE_0) | (1 << UART_CHAR_SIZE_1);
 }
 
 void uartPrint(const char *str)
@@ -86,17 +65,10 @@ void uartPrint(const char *str)
     outputBuffer.busy = 1;
     outputBuffer.numBytesToTransmit = strlen(str);
 
-    const char *ptr = str;
+    outputBuffer.bufferPtr = str;
 
-    while (outputBuffer.numBytesToTransmit > 0)
-    {
-        while (isOutBufferFull()) { taskYIELD(); }
-
-        putCharInOutBuffer(*ptr++);
-        outputBuffer.numBytesToTransmit--;
-
-        UCSR0B |= (1 << UDRE0);
-    }
+    // Transmitter buffer is ready to send data
+    CONFIG_REGISER_B |= (1 << DATA_REGISTER_FLAG);
 }
 
 void uartPrintf(const char *fmt, ...)
