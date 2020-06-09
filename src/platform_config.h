@@ -7,7 +7,8 @@
 #define PIN_OUTPUT OUTPUT
 #define PIN_HIGH HIGH
 #define PIN_LOW LOW
-#define UART_BUFFER_SIZE 80
+#define UART_BUFFER_SIZE 10
+#define UART_PRINTF_BUFFER_SIZE 80
 
 #define SPI_SS_PIN 10
 #define SPI_MOSI_PIN 11

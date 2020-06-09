@@ -7,6 +7,16 @@
 extern "C" {
 #endif
 
+#define USART_DATA_REGISTER UDR0
+#define CONFIG_REGISER_B UCSR0B
+#define CONFIG_REGISER_C UCSR0C
+#define TRANSMITTER_ENABLE TXEN0
+#define DATA_REGISTER_FLAG UDRE0
+#define BAUD_RATE_H UBRR0H
+#define BAUD_RATE_L UBRR0L
+#define UART_CHAR_SIZE_0 UCSZ00
+#define UART_CHAR_SIZE_1 UCSZ01
+
 /**
  * @brief Inits uart port
  *

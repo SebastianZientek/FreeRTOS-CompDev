@@ -47,6 +47,7 @@ void receiverTask(void *param)
             nrf24ReadData(buffer, 10, NULL);
             displaySetPos(0, 0);
             displayPrintf("R: %s ", buffer);
+            uartPrintf("R: %s\r\n", buffer);
         }
 
         vTaskDelay(120/portTICK_PERIOD_MS);
