@@ -33,11 +33,11 @@ static void setDataBit(uint8_t bit, uint8_t value)
 static void triggerEnable()
 {
     setDataBit(LCD_E, 1);
-    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteByte(DISPLAY_I2C_ADDR, displayCurrentData, 0);
     delayUs(2);
 
     setDataBit(LCD_E, 0);
-    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteByte(DISPLAY_I2C_ADDR, displayCurrentData, 0);
     delayUs(2);
 }
 
@@ -51,7 +51,7 @@ static void write4bit(uint8_t data, uint8_t registerSelect)
         setDataBit(LCD_D3 - i, data & (0x08 >> i));
     }
 
-    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteByte(DISPLAY_I2C_ADDR, displayCurrentData, 0);
     triggerEnable();
 }
 
@@ -69,14 +69,14 @@ static uint8_t read(uint8_t registerSelect)
     uint8_t ret = 0x00;
     setDataBit(LCD_RS, registerSelect);
     setDataBit(LCD_RW, 1);
-    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteByte(DISPLAY_I2C_ADDR, displayCurrentData, 0);
 
     // Read high part of data
     setDataBit(LCD_E, 1);
-    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteByte(DISPLAY_I2C_ADDR, displayCurrentData, 0);
     delayUs(10);
 
-    uint8_t data = ~i2cReadOneByte(DISPLAY_I2C_ADDR);
+    uint8_t data = ~i2cReadByte(DISPLAY_I2C_ADDR, 0);
 
     for (uint8_t i = 4; i; --i)
     {
@@ -85,15 +85,15 @@ static uint8_t read(uint8_t registerSelect)
     }
 
     setDataBit(LCD_E, 0);
-    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteByte(DISPLAY_I2C_ADDR, displayCurrentData, 0);
     delayUs(10);
 
     // Read low part of data
     setDataBit(LCD_E, 1);
-    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteByte(DISPLAY_I2C_ADDR, displayCurrentData, 0);
     delayUs(10);
 
-    data = ~i2cReadOneByte(DISPLAY_I2C_ADDR);
+    data = ~i2cReadByte(DISPLAY_I2C_ADDR, 0);
 
     for (uint8_t i = 4; i; --i)
     {
@@ -102,7 +102,7 @@ static uint8_t read(uint8_t registerSelect)
     }
 
     setDataBit(LCD_E, 0);
-    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteByte(DISPLAY_I2C_ADDR, displayCurrentData, 0);
     delayUs(10);
 
     return ret;
@@ -112,7 +112,7 @@ static void setupDisplay()
 {
     // Backlight on
     setDataBit(LCD_LED, 1);
-    i2cWriteOneByte(DISPLAY_I2C_ADDR, displayCurrentData);
+    i2cWriteByte(DISPLAY_I2C_ADDR, displayCurrentData, 0);
 
     // Send 3 times command for initialization in 8-bit mode (initial state).
     // We are sending only high part of data, rest is ignored.
