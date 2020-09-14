@@ -6,7 +6,7 @@
 #include "NRF24L01.h"
 #include "SPI.h"
 
-#define RECEIVER
+#define TRANSMITTER
 
 TaskHandle_t BlinkTaskHandle;
 TaskHandle_t RadioTaskHandle;
@@ -24,11 +24,44 @@ void transmitterTask(void *param)
     {
         on = !on;
 
-        if (on)
-            nrf24SendData("ON", strlen("ON") + 1, 0);
-        else
-            nrf24SendData("OFF", strlen("OFF") + 1, 0);
-        vTaskDelay(1000/portTICK_PERIOD_MS);
+        // if (on)
+        //     nrf24SendData("ON", strlen("ON") + 1, 0);
+        // else
+        //     nrf24SendData("OFF", strlen("OFF") + 1, 0);
+        // vTaskDelay(1000/portTICK_PERIOD_MS);
+
+
+        int val = analogRead(A0);
+        if (val > 110 && val < 120)
+        {
+            // displayPrint("UP    ");
+            nrf24SendData("UP", 3, 0);
+            vTaskDelay(200/portTICK_PERIOD_MS);
+        }
+        if(val > 180 && val < 190)
+        {
+            // displayPrint("LEFT  ");
+            nrf24SendData("LEFT", 5, 0);
+            vTaskDelay(200/portTICK_PERIOD_MS);
+        }
+        else if(val > 445 && val < 455)
+        {
+            // displayPrint("RIGHT");
+            nrf24SendData("RIGHT", 6, 0);
+            vTaskDelay(200/portTICK_PERIOD_MS);
+        }
+        else if(val > 1010 && val < 1020)
+        {
+            // displayPrint("DOWN");
+            nrf24SendData("DOWN", 5, 0);
+            vTaskDelay(200/portTICK_PERIOD_MS);
+        }
+        else if(val > 270 && val < 280)
+        {
+            // displayPrint("CENTER");
+            nrf24SendData("CENTER", 7, 0);
+            vTaskDelay(200/portTICK_PERIOD_MS);
+        }
     }
 }
 
@@ -46,8 +79,31 @@ void receiverTask(void *param)
             uint8_t buffer[10];
             nrf24ReadData(buffer, 10, NULL);
             displaySetPos(0, 0);
-            displayPrintf("R: %s ", buffer);
+            displayPrintf("R: %s     ", buffer);
             uartPrintf("R: %s\r\n", buffer);
+        }
+
+        displaySetPos(0, 1);
+        int val = analogRead(A0);
+        if (val > 110 && val < 120)
+        {
+            displayPrint("UP    ");
+        }
+        if(val > 180 && val < 190)
+        {
+            displayPrint("LEFT  ");
+        }
+        else if(val > 445 && val < 455)
+        {
+            displayPrint("RIGHT ");
+        }
+        else if(val > 1010 && val < 1020)
+        {
+            displayPrint("DOWN  ");
+        }
+        else if(val > 270 && val < 280)
+        {
+            displayPrint("CENTER");
         }
 
         vTaskDelay(120/portTICK_PERIOD_MS);
@@ -84,7 +140,7 @@ void systemInitTask(void *param)
 
     nrf24Init();
     nrf24SetChannel(20);
-    nrf24SetPowerLevel(NRF24_PWR_MIN);
+    nrf24SetPowerLevel(NRF24_PWR_MAX);
 
     uartPrint("System initialized\r\nStarting tasks\r\n");
 

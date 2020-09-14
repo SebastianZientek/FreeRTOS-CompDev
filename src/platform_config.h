@@ -15,15 +15,15 @@
 #define SPI_MISO_PIN 12
 #define SPI_SCK_PIN 13
 
-#define DISPLAY_I2C
-#define DISPLAY_I2C_ADDR 0x26
+// #define DISPLAY_I2C
+// #define DISPLAY_I2C_ADDR 0x26
 
 #define NRF24_CSN_PIN 8
 #define NRF24_CE_PIN 7
 
-// #define DISPLAY_NORITAKE
-// #define NORITAKE_SIO 4
-// #define NORITAKE_STB 5
-// #define NORITAKE_SCK 6
+#define DISPLAY_NORITAKE
+#define NORITAKE_SIO 4
+#define NORITAKE_STB 5
+#define NORITAKE_SCK 6
 
 #endif // _PLATFORM_CONFIG_H_
