@@ -150,7 +150,7 @@ void displayInit()
     cmd(DISPLAY_MODE_SET);
     delayUs(60);
 
-    cmd(DISPLAY_SETTINGS | DISPLAY_ON | DISPLAY_CURSOR_ON | DISPLAY_CURSOR_BLINK);
+    cmd(DISPLAY_SETTINGS | DISPLAY_ON /* | DISPLAY_CURSOR_ON | DISPLAY_CURSOR_BLINK */);
     delayUs(60);
 
     displayInitialized = 1;

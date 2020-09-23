@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "CompDevSDK.h"
 #include "ports.h"
 #include "uart.h"
@@ -5,12 +7,23 @@
 #include "i2c.h"
 #include "NRF24L01.h"
 #include "SPI.h"
+#include "rtc_ds1703.h"
 
-#define TRANSMITTER
+// #define TRANSMITTER
+#define RECEIVER
 
 TaskHandle_t BlinkTaskHandle;
 TaskHandle_t RadioTaskHandle;
+TaskHandle_t ClockTaskHandle;
 TaskHandle_t SystemInitTaskHandle;
+
+ds1703_time_t time;
+
+enum {
+    CLOCK,
+    MENU,
+    SETTING_CLOCK
+} mode;
 
 void transmitterTask(void *param)
 {
@@ -23,13 +36,6 @@ void transmitterTask(void *param)
     while (1)
     {
         on = !on;
-
-        // if (on)
-        //     nrf24SendData("ON", strlen("ON") + 1, 0);
-        // else
-        //     nrf24SendData("OFF", strlen("OFF") + 1, 0);
-        // vTaskDelay(1000/portTICK_PERIOD_MS);
-
 
         int val = analogRead(A0);
         if (val > 110 && val < 120)
@@ -50,7 +56,7 @@ void transmitterTask(void *param)
             nrf24SendData("RIGHT", 6, 0);
             vTaskDelay(200/portTICK_PERIOD_MS);
         }
-        else if(val > 1010 && val < 1020)
+        else if(val > 1000 && val < 1050)
         {
             // displayPrint("DOWN");
             nrf24SendData("DOWN", 5, 0);
@@ -58,10 +64,15 @@ void transmitterTask(void *param)
         }
         else if(val > 270 && val < 280)
         {
-            // displayPrint("CENTER");
-            nrf24SendData("CENTER", 7, 0);
+            mode = MENU;
+            // char clk[9];
+            // snprintf(clk, 9, "%02d:%02d:%02d", time.hour, time.min, time.sec);
+            // nrf24SendData(clk, 9, 0);
+
             vTaskDelay(200/portTICK_PERIOD_MS);
         }
+        // uartPrintf("val: %d\n\r", val);
+        // delayMicroseconds(1000);
     }
 }
 
@@ -97,7 +108,7 @@ void receiverTask(void *param)
         {
             displayPrint("RIGHT ");
         }
-        else if(val > 1010 && val < 1020)
+        else if(val > 1000 && val < 1050)
         {
             displayPrint("DOWN  ");
         }
@@ -115,20 +126,64 @@ void blinkTask(void *param)
     (void)param;
     while (1)
     {
-        setPinValue(5, !getPinValue(5));
-        vTaskDelay(100/portTICK_PERIOD_MS);
+        // setPinValue(5, !getPinValue(5));
+        char c[] = {0x1D, 0x00};
+        displayPrint(c);
+        vTaskDelay(1000/portTICK_PERIOD_MS);
     }
 }
 
+void clockTask(void *param)
+{
+    (void)param;
+
+    // ds1703_time_t time = {
+    //     .sec = 0,
+    //     .min = 30,
+    //     .hour = 12,
+    //     .dow = 5,
+    //     .day = 10,
+    //     .month = 7,
+    //     .year = 2020
+    // };
+
+    // ds1703SetTime(time);
+    while (1)
+    {
+        if (mode == CLOCK)
+        {
+            time = ds1703GetTime();
+            // uartPrintf("%d %d %d %d %d %d %d\n\r", time.hour, time.min, time.sec, time.dow, time.day, time.month, time.year);
+            displaySetPos(6, 0);
+            displayPrintf("%02d:%02d:%02d", time.hour, time.min, time.sec);
+            displaySetPos(5, 1);
+            displayPrintf("%02d.%02d.%04d", time.day, time.month, time.year);
+            vTaskDelay(1000/portTICK_PERIOD_MS);
+        }
+        if (mode == MENU)
+        {
+            displaySetPos(0, 0);
+            displayPrint("        MENU        ");
+            displaySetPos(0, 1);
+            displayPrint("                    ");
+            vTaskDelay(100/portTICK_PERIOD_MS);
+        }
+        else
+        {
+            taskYIELD();
+        }
+    }
+}
+
+
 void systemInitTask(void *param)
 {
+    mode = CLOCK;
     uartInit(9600);
     setPinMode(5, PIN_OUTPUT);
 
-    #ifdef RECEIVER
     i2cInit();
     displayInit();
-    #endif
 
     SPIConfig spiConfig = {
         .bitOrder = SPI_ORDER_MSB_FIRST,
@@ -144,12 +199,13 @@ void systemInitTask(void *param)
 
     uartPrint("System initialized\r\nStarting tasks\r\n");
 
-    xTaskCreate(blinkTask, "BlinkTask", 140, NULL, 1, &BlinkTaskHandle);
 
     #ifdef TRANSMITTER
+        xTaskCreate(clockTask, "ClockTask", 140, NULL, 1, &ClockTaskHandle);
         xTaskCreate(transmitterTask, "TransmitterRadioTask", 200, NULL, 1, &RadioTaskHandle);
     #endif
     #ifdef RECEIVER
+        xTaskCreate(blinkTask, "BlinkTask", 140, NULL, 1, &BlinkTaskHandle);
         xTaskCreate(receiverTask, "ReceiverRadioTask", 200, NULL, 1, &RadioTaskHandle);
     #endif
 
